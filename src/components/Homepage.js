@@ -16,7 +16,7 @@ class HomePage extends Component {
     super();
     this.state = {
       isSignedin: false,
-      userName: ''
+      // userName: ''
     };
     this.uiConfig = {
       signInFlow: 'popup',
@@ -29,7 +29,8 @@ class HomePage extends Component {
 
   componentDidMount = () => {
     firebase.auth().onAuthStateChanged(user => {
-      this.setState({ isSignedin: !!user, userName: user.displayName });
+      this.setState({ isSignedin: !!user });
+      //deleted userName props in setState
       console.log('user', user.displayName);
     });
   };
@@ -39,8 +40,9 @@ class HomePage extends Component {
         <h1>MUNCHKIN</h1>
         {this.state.isSignedin ? (
           <span>
-            <div>Signed In!</div>
-            <h1>Welcome: {this.state.userName}</h1>
+            <div>You are logged in!</div>
+            <h1>WELCOME {firebase.auth().currentUser.displayName}</h1>
+            {/* <h1>Welcome: {this.state.userName}</h1> */}
             <button onClick={() => firebase.auth().signOut()}>Sign out!</button>
           </span>
         ) : (
@@ -48,7 +50,7 @@ class HomePage extends Component {
               uiConfig={this.uiConfig}
               firebaseAuth={firebase.auth()}
             />
-          )}
+          )} 
       </div>
     );
   }
