@@ -4,10 +4,16 @@ import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
 
 const FIREBASE_API_KEY = process.env.REACT_APP_FIREBASE_API_KEY;
 
-firebase.initializeApp({
+const config = {
   apiKey: FIREBASE_API_KEY,
-  authDomain: 'munchkin-auth.firebaseapp.com'
-});
+  authDomain: 'munchkin-auth.firebaseapp.com',
+  databaseURL: 'https://munchkin-auth.firebaseio.com',
+  projectId: 'munchkin-auth',
+  storageBucket: 'munchkin-auth.appspot.com',
+  messagingSenderId: '359490765782'
+};
+
+export const fire = firebase.initializeApp(config);
 
 class HomePage extends Component {
   constructor() {
@@ -26,7 +32,7 @@ class HomePage extends Component {
   }
 
   componentDidMount = () => {
-    firebase.auth().onAuthStateChanged(user => {
+    fire.auth().onAuthStateChanged(user => {
       this.setState({ isSignedin: !!user });
       //deleted userName props in setState
       console.log('user', user.displayName);
@@ -39,14 +45,14 @@ class HomePage extends Component {
         {this.state.isSignedin ? (
           <span>
             <div>You are logged in!</div>
-            <h1>WELCOME {firebase.auth().currentUser.displayName}</h1>
+            <h1>WELCOME {fire.auth().currentUser.displayName}</h1>
             {/* <h1>Welcome: {this.state.userName}</h1> */}
-            <button onClick={() => firebase.auth().signOut()}>Sign out!</button>
+            <button onClick={() => fire.auth().signOut()}>Sign out!</button>
           </span>
         ) : (
           <StyledFirebaseAuth
             uiConfig={this.uiConfig}
-            firebaseAuth={firebase.auth()}
+            firebaseAuth={fire.auth()}
           />
         )}
       </div>
