@@ -119,7 +119,7 @@ var log = function log(x) {
 var Player =
 /*#__PURE__*/
 function () {
-  function Player(name) {
+  function Player(name, game) {
     _classCallCheck(this, Player);
 
     this.name = name;
@@ -168,8 +168,8 @@ function () {
     };
     this.hand = [];
     this.equip = this.equip.bind(this);
-    this.unequip = this.unequip.bind(this); // this.drawTreasure = this.drawTreasure.bind(this);
-    // this.lootRoom = this.lootRoom.bind(this);
+    this.unequip = this.unequip.bind(this);
+    this.game = game;
   }
 
   _createClass(Player, [{
@@ -655,7 +655,9 @@ function (_Component) {
     _this = _possibleConstructorReturn(this, _getPrototypeOf(GameBoard).call(this));
     _this.state = {
       game: {
+        players: [],
         currentPlayer: {},
+        playerOrder: [],
         active: false
       },
       // doors: {},
@@ -663,6 +665,7 @@ function (_Component) {
       players: ['Graham', 'Yang', 'Raymond', 'Ozal']
     };
     _this.startGame = _this.startGame.bind(_assertThisInitialized(_assertThisInitialized(_this)));
+    _this.endTurn = _this.endTurn.bind(_assertThisInitialized(_assertThisInitialized(_this)));
     return _this;
   }
 
@@ -671,6 +674,15 @@ function (_Component) {
     value: function startGame() {
       if (!this.state.players.length) return log('There are no players!');
       var game = new Game(this.state.players);
+      this.setState({
+        game: game
+      });
+    }
+  }, {
+    key: "endTurn",
+    value: function endTurn() {
+      var game = this.state.game;
+      game.endTurn();
       this.setState({
         game: game
       });
@@ -707,11 +719,10 @@ function (_Component) {
         className: "row"
       }, _react.default.createElement("div", {
         className: "col-12 placeholder"
-      }, this.state.players.map(function (player) {
+      }, game.playerOrder.map(function (player) {
         return _react.default.createElement(_PlayerCard.default, {
-          key: player,
-          playerInfo: player,
-          game: game
+          key: player.name,
+          player: player
         });
       })))), _react.default.createElement("div", {
         className: "col-6"
@@ -752,7 +763,7 @@ function (_Component) {
       }, "Loot Room"), _react.default.createElement("button", {
         type: "button",
         className: "btn btn-info",
-        onClick: game.endTurn
+        onClick: this.endTurn
       }, "End Turn"), _react.default.createElement("button", {
         type: "button",
         className: "btn btn-dark",
@@ -789,18 +800,19 @@ var _react = _interopRequireDefault(__webpack_require__(/*! react */ "./node_mod
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var PlayerCard = function PlayerCard(props) {
-  var playerName = props.playerInfo;
+  var player = props.player;
+  var color = player === player.game.currentPlayer ? 'primary' : 'secondary';
   return _react.default.createElement("div", {
-    className: "card text-white bg-secondary mb-3"
+    className: "card text-white bg-".concat(color, " mb-3")
   }, _react.default.createElement("div", {
     className: "card-header"
-  }, playerName), _react.default.createElement("div", {
+  }, player.name), _react.default.createElement("div", {
     className: "card-body"
   }, _react.default.createElement("h5", {
     className: "card-title"
-  }, "Level: 1"), _react.default.createElement("p", {
+  }, "Level: ", player.level), _react.default.createElement("p", {
     className: "card-text"
-  }, "Attack Power: 1")));
+  }, "Attack Power: ", player.attack)));
 };
 
 var _default = PlayerCard;
@@ -1513,17 +1525,16 @@ function rollDie() {
 var Game =
 /*#__PURE__*/
 function () {
-  function Game(players) {
+  function Game(playerNames) {
     var _this = this;
 
     _classCallCheck(this, Game);
 
     doors.shuffleCards();
     treasures.shuffleCards();
-    players = players.map(function (player) {
-      return new Player(player);
-    });
-    this.players = shuffle(players);
+    this.players = shuffle(playerNames.map(function (playerName) {
+      return new Player(playerName, _this);
+    }));
     this.playerOrder = this.players.slice();
     this.currentPlayer = {};
 
@@ -1543,7 +1554,7 @@ function () {
       }));
     };
 
-    players.forEach(function (player) {
+    this.players.forEach(function (player) {
       for (var i = 0; i < 4; i++) {
         player.draw(doors);
         player.draw(treasures);
@@ -1591,7 +1602,7 @@ function () {
   }, {
     key: "startBattle",
     value: function startBattle(monster) {
-      this.battle = new Battle(monster, this.currentPlayer);
+      this.battle = new Battle(monster, this);
     }
   }, {
     key: "endGame",
@@ -1606,12 +1617,13 @@ function () {
 var Battle =
 /*#__PURE__*/
 function () {
-  function Battle(monster, combatant) {
+  function Battle(monster, game) {
     _classCallCheck(this, Battle);
 
     this.monsters = [monster];
-    this.combatants = [combatant];
+    this.combatants = [this.game.currentPlayer];
     this.isActive = true;
+    this.game = game;
     log('A ' + monster.name + ' approaches you!');
     log(monster.name + ': ' + monster.description);
     log('Level: ' + monster.level);
@@ -1631,12 +1643,14 @@ function () {
   }, {
     key: "resolve",
     value: function resolve() {
-      var combatantsAttack = Battle.combatants.map(function (combatant) {
+      var _this2 = this;
+
+      var combatantsAttack = this.combatants.map(function (combatant) {
         return combatant.attack;
       }).reduce(function (num1, num2) {
         return num1 + num2;
       });
-      var monstersAttack = Battle.monsters.map(function (monster) {
+      var monstersAttack = this.monsters.map(function (monster) {
         return monster.level;
       }).reduce(function (num1, num2) {
         return num1 + num2;
@@ -1646,10 +1660,11 @@ function () {
         this.monsters.forEach(function (monster) {
           monster.die();
           log('The ' + monster.name + ' has been slain!');
-          currentPlayer.levelUp();
+
+          _this2.game.currentPlayer.levelUp();
 
           for (var i = 0; i < monster.treasures; i++) {
-            currentPlayer.draw(treasures);
+            _this2.game.currentPlayer.draw(treasures);
           }
         });
       } else {

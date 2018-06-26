@@ -7,14 +7,17 @@ class GameBoard extends Component {
 		super();
 		this.state = {
 			game: {
+				players: [],
 				currentPlayer: {},
+				playerOrder: [],
 				active: false
 			},
 			// doors: {},
 			// treasures: {},
-			players: [ 'Graham', 'Yang', 'Raymond', 'Ozal' ]
+			players: ['Graham', 'Yang', 'Raymond', 'Ozal']
 		};
 		this.startGame = this.startGame.bind(this);
+		this.endTurn = this.endTurn.bind(this);
 	}
 
 	startGame() {
@@ -23,6 +26,14 @@ class GameBoard extends Component {
 		this.setState({
 			game
 		});
+	}
+
+	endTurn() {
+		const { game } = this.state;
+		game.endTurn();
+		this.setState({
+			game
+		})
 	}
 
 	render() {
@@ -40,8 +51,8 @@ class GameBoard extends Component {
 					<div className='col-3'>
 						<div className='row'>
 							<div className='col-12 placeholder'>
-								{this.state.players.map((player) => {
-									return <PlayerCard key={player} playerInfo={player} />;
+								{game.playerOrder.map((player) => {
+									return <PlayerCard key={player.name} player={player} />;
 								})}
 							</div>
 						</div>
@@ -75,7 +86,7 @@ class GameBoard extends Component {
 									<button type='button' className='btn btn-secondary' onClick={game.lootRoom}>
 										Loot Room
 									</button>
-									<button type='button' className='btn btn-info' onClick={game.endTurn}>
+									<button type='button' className='btn btn-info' onClick={this.endTurn}>
 										End Turn
 									</button>
 									<button type='button' className='btn btn-dark' onClick={this.startGame}>
