@@ -2,7 +2,7 @@ const chalk = require('chalk');
 const log = (x) => console.log(chalk.green(x));
 
 class Player {
-    constructor(name) {
+    constructor(name, game) {
         this.name = name;
         this.level = 1;
         this.run = 0;
@@ -48,8 +48,7 @@ class Player {
         this.hand = [];
         this.equip = this.equip.bind(this);
         this.unequip = this.unequip.bind(this);
-        // this.drawTreasure = this.drawTreasure.bind(this);
-        // this.lootRoom = this.lootRoom.bind(this);
+        this.game = game;
     }
 
     get attack() {

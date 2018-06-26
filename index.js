@@ -12,11 +12,10 @@ function rollDie() {
 }
 
 class Game {
-    constructor(players) {
+    constructor(playerNames) {
 		doors.shuffleCards();
         treasures.shuffleCards();
-        players = players.map(player => new Player(player));
-        this.players = shuffle(players);
+        this.players = shuffle(playerNames.map(playerName => new Player(playerName, this)));
         this.playerOrder = this.players.slice();
         this.currentPlayer = {};
         this.drawTreasure = () => {
@@ -27,7 +26,7 @@ class Game {
             this.currentPlayer.draw(doors);
             log(this.currentPlayer.hand.map(card => card.name))
         };
-        players.forEach(player => {
+        this.players.forEach(player => {
             for (let i = 0; i < 4; i++) {
                 player.draw(doors);
                 player.draw(treasures);
@@ -70,7 +69,7 @@ class Game {
     }
 
     startBattle(monster) {
-        this.battle = new Battle(monster, this.currentPlayer);
+        this.battle = new Battle(monster, this);
     }
 
     endGame(playerName) {
@@ -79,10 +78,11 @@ class Game {
 }
 
 class Battle {
-    constructor(monster, combatant) {
+    constructor(monster, game) {
         this.monsters = [monster];
-        this.combatants = [combatant];
+        this.combatants = [this.game.currentPlayer];
         this.isActive = true;
+        this.game = game
         log('A ' + monster.name + ' approaches you!');
         log(monster.name + ': ' + monster.description);
         log('Level: ' + monster.level);
@@ -99,19 +99,19 @@ class Battle {
     }
 
     resolve() {
-        const combatantsAttack = Battle.combatants
+        const combatantsAttack = this.combatants
             .map(combatant => combatant.attack)
             .reduce((num1, num2) => num1 + num2);
-        const monstersAttack = Battle.monsters
+        const monstersAttack = this.monsters
             .map(monster => monster.level)
             .reduce((num1, num2) => num1 + num2);
         if (combatantsAttack > monstersAttack) {
             this.monsters.forEach(monster => {
                 monster.die();
                 log('The ' + monster.name + ' has been slain!');
-                currentPlayer.levelUp();
+                this.game.currentPlayer.levelUp();
                 for (let i = 0; i < monster.treasures; i++) {
-                    currentPlayer.draw(treasures);
+                    this.game.currentPlayer.draw(treasures);
                 }
             });
         } else {
