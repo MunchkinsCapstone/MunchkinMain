@@ -4,6 +4,7 @@ import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
 
 const FIREBASE_API_KEY = process.env.REACT_APP_FIREBASE_API_KEY;
 
+
 const config = {
   apiKey: FIREBASE_API_KEY,
   authDomain: 'munchkin-auth.firebaseapp.com',
