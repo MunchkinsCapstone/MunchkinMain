@@ -4,9 +4,6 @@ const Player = require('./Player');
 
 let { Deck, equipments, monsters, shuffle, doors, treasures } = require('./cards');
 
-doors = new Deck(doors);
-treasures = new Deck(treasures);
-
 function rollDie() {
     return Math.ceil(Math.random() * 6);
 }
@@ -18,33 +15,29 @@ class Game {
         this.players = shuffle(playerNames.map(playerName => new Player(playerName, this)));
         this.playerOrder = this.players.slice();
         this.currentPlayer = {};
-        this.drawTreasure = () => {
-            this.currentPlayer.draw(treasures);
-            log(this.currentPlayer.hand.map(card => card.name))
-        };
-        this.lootRoom = () => {
-            this.currentPlayer.draw(doors);
-            log(this.currentPlayer.hand.map(card => card.name))
-        };
         this.players.forEach(player => {
             for (let i = 0; i < 4; i++) {
                 player.draw(doors);
                 player.draw(treasures);
             }
         });
-        this.active = true;
+        this.isActive = true;
+        this.phase = 1;
         this.battle = { isActive: false };
         this.startTurn = this.startTurn.bind(this);
         this.knockKnock = this.knockKnock.bind(this);
         this.startBattle = this.startBattle.bind(this);
+        this.drawTreasure = this.drawTreasure.bind(this);
+        this.lootRoom = this.lootRoom.bind(this);
         this.endTurn = this.endTurn.bind(this);
         this.startTurn();
     }
 
     startTurn() {
         this.currentPlayer = this.players.shift();
+        this.phase = 1;
         this.currentPlayer.isActive = true;
-        log('ACTIVE PLAYER: ' + this.currentPlayer.name)
+        log(`ACTIVE PLAYER: ${this.currentPlayer.name}`)
     }
 
     knockKnock() {
@@ -52,9 +45,21 @@ class Game {
         const card = doors.flip();
         if (card.type === 'Monster') this.startBattle(card);
         else {
-            log('You found: ' + card.name + '!')
+            log(`You found: ${card.name}`)
             this.currentPlayer.hand.push(card);
         }
+        this.phase = 2;
+    }
+
+    drawTreasure() {
+        this.currentPlayer.draw(treasures);
+        log(this.currentPlayer.hand.map(card => card.name));
+    }
+
+    lootRoom () {
+        this.currentPlayer.draw(doors);
+        log(this.currentPlayer.hand.map(card => card.name));
+        this.phase = 3;
     }
 
     endTurn() {
@@ -73,29 +78,35 @@ class Game {
     }
 
     endGame(playerName) {
-        log(playerName + ' wins!');
+        log(`${playerName} wins!`);
     }
 }
 
 class Battle {
     constructor(monster, game) {
         this.monsters = [monster];
+        this.game = game;
         this.combatants = [this.game.currentPlayer];
         this.isActive = true;
-        this.game = game
-        log('A ' + monster.name + ' approaches you!');
-        log(monster.name + ': ' + monster.description);
-        log('Level: ' + monster.level);
+        this.end = this.end.bind(this);
+        this.flee = this.flee.bind(this);
+        this.resolve = this.resolve.bind(this);
+        log(`A '${monster.name} approaches you!`);
+        log(`${monster.name}: ${monster.description}`);
+        log(`Level: ${monster.level}`);
     }
 
     flee() {
         this.combatants.forEach(combatant => {
             const roll = rollDie();
-            if (roll + combatant.run < 5) combatant.die();
+            if (roll + combatant.run < 5) {
+                log(`${combatant.name} failed to escape!`);
+                monsters.forEach(monster => {
+                    monster.badStuff(combatant);
+                });
+            } else log(`${combatant.name} got away safely!`);
         });
-        this.isActive = false;
-        this.combatants = [];
-        this.monsters = [];
+        this.end();
     }
 
     resolve() {
@@ -108,7 +119,7 @@ class Battle {
         if (combatantsAttack > monstersAttack) {
             this.monsters.forEach(monster => {
                 monster.die();
-                log('The ' + monster.name + ' has been slain!');
+                log(`The ${monster.name} has been slain!`);
                 this.game.currentPlayer.levelUp();
                 for (let i = 0; i < monster.treasures; i++) {
                     this.game.currentPlayer.draw(treasures);
@@ -116,79 +127,21 @@ class Battle {
             });
         } else {
             this.combatants.forEach(combatant => {
-                combatant.die();
-                log(combatant.name + ' has fallen in combat!');
+                log(`${combatant.name} was defeated!`);
+                // monsters.forEach(monster => {
+                //     monster.badStuff(combatant);
+                // });
             });
             this.monsters.forEach(monster => {
                 monster.discard();
             });
         }
-        this.isActive = false;
-        this.combatants = [];
-        this.monsters = [];
+        this.end();
     }
-}
 
-// function startGame() {
-//     const playerNames = ['Graham','Yang','Raymond','Ozal'];
-//     const game = new Game(playerNames);
-//     log('Players: ' + players.map(player=>player.name));
-//     startTurn();
-// }
-
-// function endGame(playerName) {
-//     log(playerName + ' wins!');
-// }
-
-// function startTurn() {
-//     currentPlayer = startGame.players.shift();
-//     currentPlayer.isActive = true;
-// }
-
-// function endTurn() {
-//     if (currentPlayer.hand.length > currentPlayer.maxInventory) {
-//         return log('You are carrying too many items!');
-//     }
-//     else {
-//         currentPlayer.isActive = false;
-//         players.push(currentPlayer);
-//         startTurn();
-//     }
-// }
-
-// function knockKnock() {
-//     log('*knock* *knock*');
-//     const card = doors.flip();
-//     if (card.type === 'Monster') Battle.start(card);
-//     else currentPlayer.hand.push(card);
-// }
-
-function lootRoom() {
-    currentPlayer.draw(doors);
-}
-
-function simulateTurn() {
-    const player = new Player('Steve');
-    startGame([player]);
-    log('Player: ' + player.name);
-    log('Level: ' + player.level);
-    log('Attack: ' + player.level + player.bonus);
-    log('isActive: ' + player.isActive);
-    log('Hand: ' + player.hand.slice(0, 2));
-    simulateBattle();
-}
-
-function simulateBattle() {
-    log('-----------------');
-    knockKnock();
-    currentPlayer.equip(1);
-    // ^^^ Toggle the above line to change who wins
-    log('-----------------');
-    log('Equipment: ' + currentPlayer.equipment.feet);
-    log('Attack: ' + currentPlayer.level + currentPlayer.bonus);
-    log('-----------------');
-    Battle.resolve();
-    log('Level: ' + currentPlayer.level);
+    end() {
+        this.game.battle = { isActive: false }
+    }
 }
 
 module.exports = {
@@ -196,7 +149,6 @@ module.exports = {
     rollDie,
     shuffle,
     Battle,
-    lootRoom,
     doors,
     treasures,
     log,

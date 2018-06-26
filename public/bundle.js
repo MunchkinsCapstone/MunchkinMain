@@ -116,6 +116,11 @@ var log = function log(x) {
   return console.log(chalk.green(x));
 };
 
+var _require = __webpack_require__(/*! ./cards */ "./cards.js"),
+    Race = _require.Race,
+    Class = _require.Class,
+    Equipment = _require.Equipment;
+
 var Player =
 /*#__PURE__*/
 function () {
@@ -126,40 +131,16 @@ function () {
     this.level = 1;
     this.run = 0;
     this.maxInventory = 5;
-    this.race = {
-      name: 'Human',
-      bonus: 0
-    };
-    this.class = {
-      name: 'Commoner',
-      bonus: 0
-    };
+    this.race = new Race('Human', 'A boring old human being', function () {}, function () {});
+    this.class = new Class('Commoner', 'A simple, lowly peasant', function () {}, function () {});
     this.isActive = false;
     this.equipment = {
-      head: {
-        name: 'None',
-        bonus: 0
-      },
-      torso: {
-        name: 'None',
-        bonus: 0
-      },
-      leftHand: {
-        name: 'None',
-        bonus: 0
-      },
-      rightHand: {
-        name: 'None',
-        bonus: 1
-      },
-      legs: {
-        name: 'None',
-        bonus: 0
-      },
-      feet: {
-        name: 'None',
-        bonus: 0
-      },
+      head: new Equipment('Bare', 'No bonuses', 'head', function () {}, function () {}),
+      torso: new Equipment('Rags', 'No bonuses', 'head', function () {}, function () {}),
+      leftHand: new Equipment('Bare', 'No bonuses', 'head', function () {}, function () {}),
+      rightHand: new Equipment('Bare', 'No bonuses', 'head', function () {}, function () {}),
+      legs: new Equipment('Rags', 'No bonuses', 'head', function () {}, function () {}),
+      feet: new Equipment('Bare', 'No bonuses', 'head', function () {}, function () {}),
 
       get bonus() {
         return 0;
@@ -177,22 +158,10 @@ function () {
     value: function draw(deck) {
       var _this$hand;
 
-      (_this$hand = this.hand).push.apply(_this$hand, _toConsumableArray(deck.cards.slice(0, 1))); //                           ^^^^^^^^^^^ Change this to shift() after tests
-      // this.hand.push(deck.cards.shift());
+      (_this$hand = this.hand).push.apply(_this$hand, _toConsumableArray(deck.cards.slice(0, 1))); //                           ^^^^^^^^^^^ Change this to next line after tests
+      // this.hand.push(deck.draw());
 
-    } // static drawTreasure(treasures) {
-    //     this.drawTreasure = function() {
-    //         this.draw(treasures);
-    //         log(this.hand.length);
-    //     }
-    // }
-    // static lootRoom(doors) {
-    //     this.lootRoom = function() {
-    //         this.draw(doors);
-    //         log(this.hand.length);
-    //     }
-    // }
-
+    }
   }, {
     key: "gift",
     value: function gift(cardIdx, recipient) {
@@ -323,14 +292,14 @@ function () {
 
     this.name = name;
     this.description = description;
+    this.discard = this.discard.bind(this);
   }
 
   _createClass(Card, [{
-    key: "play",
-    value: function play() {}
-  }, {
     key: "discard",
-    value: function discard() {}
+    value: function discard() {
+      decks[this.deck].graveYard.push(this);
+    }
   }]);
 
   return Card;
@@ -351,6 +320,7 @@ function (_Card) {
     _this.treasures = treasures;
     _this.type = 'Monster';
     _this.badStuff = badStuff;
+    _this.deck = 'doors';
     return _this;
   }
 
@@ -395,6 +365,7 @@ function (_Buff) {
 
     _this3 = _possibleConstructorReturn(this, _getPrototypeOf(Modifier).call(this, name, description, effect, remove));
     _this3.type = 'Modifier';
+    _this3.deck = 'doors';
     return _this3;
   }
 
@@ -414,6 +385,7 @@ function (_Buff2) {
     _this4 = _possibleConstructorReturn(this, _getPrototypeOf(Equipment).call(this, name, description, effect, remove));
     _this4.bodyPart = bodyPart;
     _this4.type = 'Equipment';
+    _this4.deck = 'treasures';
     return _this4;
   }
 
@@ -432,6 +404,7 @@ function (_Buff3) {
 
     _this5 = _possibleConstructorReturn(this, _getPrototypeOf(Spell).call(this, name, description, effect, remove));
     _this5.type = 'Spell';
+    _this5.deck = 'treasures';
     return _this5;
   }
 
@@ -450,6 +423,7 @@ function (_Buff4) {
 
     _this6 = _possibleConstructorReturn(this, _getPrototypeOf(Class).call(this, name, description, effect, remove));
     _this6.type = 'Class';
+    _this6.deck = 'doors';
     return _this6;
   }
 
@@ -468,6 +442,7 @@ function (_Buff5) {
 
     _this7 = _possibleConstructorReturn(this, _getPrototypeOf(Race).call(this, name, description, effect, remove));
     _this7.type = 'Race';
+    _this7.deck = 'doors';
     return _this7;
   }
 
@@ -495,9 +470,20 @@ function () {
     _classCallCheck(this, Deck);
 
     this.cards = cards;
+    this.graveYard = [];
+    this.draw = this.draw.bind(this);
+    this.flip = this.flip.bind(this);
+    this.shuffleCards = this.shuffleCards.bind(this);
+    this.restock = this.restock.bind(this);
   }
 
   _createClass(Deck, [{
+    key: "draw",
+    value: function draw() {
+      if (!this.cards.length) this.restock();
+      return this.cards.shift();
+    }
+  }, {
     key: "flip",
     value: function flip() {
       return this.cards.shift();
@@ -507,6 +493,11 @@ function () {
     value: function shuffleCards() {
       this.cards = shuffle(this.cards);
     }
+  }, {
+    key: "restock",
+    value: function restock() {
+      this.cards = this.cards.concat(shuffle(this.graveYard));
+    }
   }]);
 
   return Deck;
@@ -515,9 +506,9 @@ function () {
 //-----------------------------------------------------------------------//
 
 
-var monsters = [new Monster('Slime', 'A big glob o\' goop', 2, 1, function () {}), new Monster('Skeleton', 'A buncha dancin\', rattlin\' bones', 3, 1, function () {}), new Monster('Dragon', 'A gigantic fire-breathing lizard', 20, 5, function (player) {
+var monsters = [new Monster('Slime', 'A big glob o\' goop', 2, 1, function (player) {}), new Monster('Skeleton', 'A buncha dancin\', rattlin\' bones', 3, 1, function (player) {}), new Monster('Dragon', 'A gigantic fire-breathing lizard', 20, 5, function (player) {
   player.die();
-}), new Monster('Vampire', 'Fanged fiend', 14, 4, function () {})];
+}), new Monster('Vampire', 'Fanged fiend', 14, 4, function (player) {})];
 var modifiers = [new Modifier('Ancient', '+10 to monster', function (monster) {
   monster.level += 10;
 }, function (monster) {
@@ -544,10 +535,17 @@ var races = [new Race('Elf', 'A denizen of the North Pole'), new Race('Dwarf', '
 }), new Race('Halfling', 'It\'s not the size, it\'s how you use it'), new Race('Orc', 'Hey, some of my best friends are green!')];
 var classes = [new Class('Warrior', ''), new Class('Bard', ''), new Class('Thief', ''), new Class('Cleric', ''), new Class('Accountant', '')];
 var spells = [new Spell('Magic Missile')];
-var doors = monsters.concat(modifiers).concat(races).concat(classes);
-var treasures = equipments.concat(spells);
+var doors = new Deck(monsters.concat(modifiers).concat(races).concat(classes));
+var treasures = new Deck(equipments.concat(spells));
+var decks = {
+  doors: doors,
+  treasures: treasures
+};
 module.exports = {
   Deck: Deck,
+  Race: Race,
+  Class: Class,
+  Equipment: Equipment,
   monsters: monsters,
   equipments: equipments,
   classes: classes,
@@ -593,6 +591,89 @@ exports.default = _default;
 
 /***/ }),
 
+/***/ "./client/components/ButtonPanel.js":
+/*!******************************************!*\
+  !*** ./client/components/ButtonPanel.js ***!
+  \******************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = exports.ButtonPanel = void 0;
+
+var _react = _interopRequireWildcard(__webpack_require__(/*! react */ "./node_modules/react/index.js"));
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
+
+var ButtonPanel = function ButtonPanel(props) {
+  var game = props.game,
+      startGame = props.startGame,
+      knockKnock = props.knockKnock,
+      fight = props.fight,
+      flee = props.flee,
+      lootRoom = props.lootRoom,
+      endTurn = props.endTurn,
+      discard = props.discard;
+  if (!game.isActive) return _react.default.createElement("div", {
+    className: "flexContainer"
+  }, _react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-dark",
+    onClick: startGame
+  }, "Start Game"));
+  if (game.battle.isActive) return _react.default.createElement("div", {
+    className: "flexContainer"
+  }, _react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-danger",
+    onClick: fight
+  }, "Fight!"), _react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-warning",
+    onClick: flee
+  }, "Flee!"));
+  if (game.phase === 1) return _react.default.createElement("div", {
+    className: "flexContainer"
+  }, _react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-primary",
+    onClick: knockKnock
+  }, "Kick Door"));
+  if (game.phase === 2) return _react.default.createElement("div", {
+    className: "flexContainer"
+  }, _react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-danger",
+    onClick: endTurn
+  }, "Fight A Monster"), _react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-success",
+    onClick: lootRoom
+  }, "Loot The Room"));
+  if (game.phase === 3) return _react.default.createElement("div", {
+    className: "flexContainer"
+  }, _react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-secondary",
+    onClick: discard
+  }, "Discard"), _react.default.createElement("button", {
+    type: "button",
+    className: "btn btn-info",
+    onClick: endTurn
+  }, "End Turn"));
+};
+
+exports.ButtonPanel = ButtonPanel;
+var _default = ButtonPanel;
+exports.default = _default;
+
+/***/ }),
+
 /***/ "./client/components/GameBoard.js":
 /*!****************************************!*\
   !*** ./client/components/GameBoard.js ***!
@@ -611,6 +692,8 @@ exports.default = void 0;
 var _react = _interopRequireWildcard(__webpack_require__(/*! react */ "./node_modules/react/index.js"));
 
 var _PlayerCard = _interopRequireDefault(__webpack_require__(/*! ./PlayerCard */ "./client/components/PlayerCard.js"));
+
+var _ButtonPanel = _interopRequireDefault(__webpack_require__(/*! ./ButtonPanel */ "./client/components/ButtonPanel.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -658,14 +741,17 @@ function (_Component) {
         players: [],
         currentPlayer: {},
         playerOrder: [],
-        active: false
+        isActive: false
       },
-      // doors: {},
-      // treasures: {},
       players: ['Graham', 'Yang', 'Raymond', 'Ozal']
     };
     _this.startGame = _this.startGame.bind(_assertThisInitialized(_assertThisInitialized(_this)));
     _this.endTurn = _this.endTurn.bind(_assertThisInitialized(_assertThisInitialized(_this)));
+    _this.knockKnock = _this.knockKnock.bind(_assertThisInitialized(_assertThisInitialized(_this)));
+    _this.fight = _this.fight.bind(_assertThisInitialized(_assertThisInitialized(_this)));
+    _this.flee = _this.flee.bind(_assertThisInitialized(_assertThisInitialized(_this)));
+    _this.lootRoom = _this.lootRoom.bind(_assertThisInitialized(_assertThisInitialized(_this)));
+    _this.discard = _this.discard.bind(_assertThisInitialized(_assertThisInitialized(_this)));
     return _this;
   }
 
@@ -679,10 +765,55 @@ function (_Component) {
       });
     }
   }, {
+    key: "knockKnock",
+    value: function knockKnock() {
+      var game = this.state.game;
+      game.knockKnock();
+      this.setState({
+        game: game
+      });
+    }
+  }, {
+    key: "fight",
+    value: function fight() {
+      var game = this.state.game;
+      game.battle.resolve();
+      this.setState({
+        game: game
+      });
+    }
+  }, {
+    key: "flee",
+    value: function flee() {
+      var game = this.state.game;
+      game.battle.flee();
+      this.setState({
+        game: game
+      });
+    }
+  }, {
+    key: "lootRoom",
+    value: function lootRoom() {
+      var game = this.state.game;
+      game.lootRoom();
+      this.setState({
+        game: game
+      });
+    }
+  }, {
     key: "endTurn",
     value: function endTurn() {
       var game = this.state.game;
       game.endTurn();
+      this.setState({
+        game: game
+      });
+    }
+  }, {
+    key: "discard",
+    value: function discard() {
+      var game = this.state.game;
+      game.currentPlayer.hand.pop().discard();
       this.setState({
         game: game
       });
@@ -735,40 +866,16 @@ function (_Component) {
         className: "row"
       }, _react.default.createElement("div", {
         className: "col-12"
-      }, _react.default.createElement("div", {
-        className: "flexContainer"
-      }, _react.default.createElement("button", {
-        type: "button",
-        className: "btn btn-primary",
-        onClick: game.knockKnock
-      }, "Kick Door"), _react.default.createElement("button", {
-        type: "button",
-        className: "btn btn-danger",
-        onClick: function onClick() {
-          var discarded = game.currentPlayer.hand.pop();
-          console.log("Discarded: ".concat(discarded));
-        }
-      }, "Discard Hand"), _react.default.createElement("button", {
-        type: "button",
-        className: "btn btn-success",
-        onClick: game.drawTreasure
-      }, "Draw Treasure"), _react.default.createElement("button", {
-        type: "button",
-        className: "btn btn-warning",
-        onClick: logHand
-      }, "Run"), _react.default.createElement("button", {
-        type: "button",
-        className: "btn btn-secondary",
-        onClick: game.lootRoom
-      }, "Loot Room"), _react.default.createElement("button", {
-        type: "button",
-        className: "btn btn-info",
-        onClick: this.endTurn
-      }, "End Turn"), _react.default.createElement("button", {
-        type: "button",
-        className: "btn btn-dark",
-        onClick: this.startGame
-      }, "Start Game")))))));
+      }, _react.default.createElement(_ButtonPanel.default, {
+        game: game,
+        startGame: this.startGame,
+        knockKnock: this.knockKnock,
+        fight: this.fight,
+        flee: this.flee,
+        lootRoom: this.lootRoom,
+        discard: this.discard,
+        endTurn: this.endTurn
+      }))))));
     }
   }]);
 
@@ -1515,9 +1622,6 @@ var _require = __webpack_require__(/*! ./cards */ "./cards.js"),
     doors = _require.doors,
     treasures = _require.treasures;
 
-doors = new Deck(doors);
-treasures = new Deck(treasures);
-
 function rollDie() {
   return Math.ceil(Math.random() * 6);
 }
@@ -1537,36 +1641,22 @@ function () {
     }));
     this.playerOrder = this.players.slice();
     this.currentPlayer = {};
-
-    this.drawTreasure = function () {
-      _this.currentPlayer.draw(treasures);
-
-      log(_this.currentPlayer.hand.map(function (card) {
-        return card.name;
-      }));
-    };
-
-    this.lootRoom = function () {
-      _this.currentPlayer.draw(doors);
-
-      log(_this.currentPlayer.hand.map(function (card) {
-        return card.name;
-      }));
-    };
-
     this.players.forEach(function (player) {
       for (var i = 0; i < 4; i++) {
         player.draw(doors);
         player.draw(treasures);
       }
     });
-    this.active = true;
+    this.isActive = true;
+    this.phase = 1;
     this.battle = {
       isActive: false
     };
     this.startTurn = this.startTurn.bind(this);
     this.knockKnock = this.knockKnock.bind(this);
     this.startBattle = this.startBattle.bind(this);
+    this.drawTreasure = this.drawTreasure.bind(this);
+    this.lootRoom = this.lootRoom.bind(this);
     this.endTurn = this.endTurn.bind(this);
     this.startTurn();
   }
@@ -1575,8 +1665,9 @@ function () {
     key: "startTurn",
     value: function startTurn() {
       this.currentPlayer = this.players.shift();
+      this.phase = 1;
       this.currentPlayer.isActive = true;
-      log('ACTIVE PLAYER: ' + this.currentPlayer.name);
+      log("ACTIVE PLAYER: ".concat(this.currentPlayer.name));
     }
   }, {
     key: "knockKnock",
@@ -1584,9 +1675,27 @@ function () {
       log('*knock* *knock*');
       var card = doors.flip();
       if (card.type === 'Monster') this.startBattle(card);else {
-        log('You found: ' + card.name + '!');
+        log("You found: ".concat(card.name));
         this.currentPlayer.hand.push(card);
       }
+      this.phase = 2;
+    }
+  }, {
+    key: "drawTreasure",
+    value: function drawTreasure() {
+      this.currentPlayer.draw(treasures);
+      log(this.currentPlayer.hand.map(function (card) {
+        return card.name;
+      }));
+    }
+  }, {
+    key: "lootRoom",
+    value: function lootRoom() {
+      this.currentPlayer.draw(doors);
+      log(this.currentPlayer.hand.map(function (card) {
+        return card.name;
+      }));
+      this.phase = 3;
     }
   }, {
     key: "endTurn",
@@ -1607,7 +1716,7 @@ function () {
   }, {
     key: "endGame",
     value: function endGame(playerName) {
-      log(playerName + ' wins!');
+      log("".concat(playerName, " wins!"));
     }
   }]);
 
@@ -1621,12 +1730,15 @@ function () {
     _classCallCheck(this, Battle);
 
     this.monsters = [monster];
+    this.game = game;
     this.combatants = [this.game.currentPlayer];
     this.isActive = true;
-    this.game = game;
-    log('A ' + monster.name + ' approaches you!');
-    log(monster.name + ': ' + monster.description);
-    log('Level: ' + monster.level);
+    this.end = this.end.bind(this);
+    this.flee = this.flee.bind(this);
+    this.resolve = this.resolve.bind(this);
+    log("A '".concat(monster.name, " approaches you!"));
+    log("".concat(monster.name, ": ").concat(monster.description));
+    log("Level: ".concat(monster.level));
   }
 
   _createClass(Battle, [{
@@ -1634,11 +1746,15 @@ function () {
     value: function flee() {
       this.combatants.forEach(function (combatant) {
         var roll = rollDie();
-        if (roll + combatant.run < 5) combatant.die();
+
+        if (roll + combatant.run < 5) {
+          log("".concat(combatant.name, " failed to escape!"));
+          monsters.forEach(function (monster) {
+            monster.badStuff(combatant);
+          });
+        } else log("".concat(combatant.name, " got away safely!"));
       });
-      this.isActive = false;
-      this.combatants = [];
-      this.monsters = [];
+      this.end();
     }
   }, {
     key: "resolve",
@@ -1659,7 +1775,7 @@ function () {
       if (combatantsAttack > monstersAttack) {
         this.monsters.forEach(function (monster) {
           monster.die();
-          log('The ' + monster.name + ' has been slain!');
+          log("The ".concat(monster.name, " has been slain!"));
 
           _this2.game.currentPlayer.levelUp();
 
@@ -1669,86 +1785,34 @@ function () {
         });
       } else {
         this.combatants.forEach(function (combatant) {
-          combatant.die();
-          log(combatant.name + ' has fallen in combat!');
+          log("".concat(combatant.name, " was defeated!")); // monsters.forEach(monster => {
+          //     monster.badStuff(combatant);
+          // });
         });
         this.monsters.forEach(function (monster) {
           monster.discard();
         });
       }
 
-      this.isActive = false;
-      this.combatants = [];
-      this.monsters = [];
+      this.end();
+    }
+  }, {
+    key: "end",
+    value: function end() {
+      this.game.battle = {
+        isActive: false
+      };
     }
   }]);
 
   return Battle;
-}(); // function startGame() {
-//     const playerNames = ['Graham','Yang','Raymond','Ozal'];
-//     const game = new Game(playerNames);
-//     log('Players: ' + players.map(player=>player.name));
-//     startTurn();
-// }
-// function endGame(playerName) {
-//     log(playerName + ' wins!');
-// }
-// function startTurn() {
-//     currentPlayer = startGame.players.shift();
-//     currentPlayer.isActive = true;
-// }
-// function endTurn() {
-//     if (currentPlayer.hand.length > currentPlayer.maxInventory) {
-//         return log('You are carrying too many items!');
-//     }
-//     else {
-//         currentPlayer.isActive = false;
-//         players.push(currentPlayer);
-//         startTurn();
-//     }
-// }
-// function knockKnock() {
-//     log('*knock* *knock*');
-//     const card = doors.flip();
-//     if (card.type === 'Monster') Battle.start(card);
-//     else currentPlayer.hand.push(card);
-// }
-
-
-function lootRoom() {
-  currentPlayer.draw(doors);
-}
-
-function simulateTurn() {
-  var player = new Player('Steve');
-  startGame([player]);
-  log('Player: ' + player.name);
-  log('Level: ' + player.level);
-  log('Attack: ' + player.level + player.bonus);
-  log('isActive: ' + player.isActive);
-  log('Hand: ' + player.hand.slice(0, 2));
-  simulateBattle();
-}
-
-function simulateBattle() {
-  log('-----------------');
-  knockKnock();
-  currentPlayer.equip(1); // ^^^ Toggle the above line to change who wins
-
-  log('-----------------');
-  log('Equipment: ' + currentPlayer.equipment.feet);
-  log('Attack: ' + currentPlayer.level + currentPlayer.bonus);
-  log('-----------------');
-  Battle.resolve();
-  log('Level: ' + currentPlayer.level);
-}
+}();
 
 module.exports = {
   Player: Player,
   rollDie: rollDie,
   shuffle: shuffle,
   Battle: Battle,
-  lootRoom: lootRoom,
   doors: doors,
   treasures: treasures,
   log: log,

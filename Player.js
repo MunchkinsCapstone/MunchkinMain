@@ -1,5 +1,6 @@
 const chalk = require('chalk');
 const log = (x) => console.log(chalk.green(x));
+const { Race, Class, Equipment } = require('./cards');
 
 class Player {
     constructor(name, game) {
@@ -7,40 +8,16 @@ class Player {
         this.level = 1;
         this.run = 0;
         this.maxInventory = 5;
-        this.race = {
-            name: 'Human',
-            bonus: 0
-        };
-        this.class = {
-            name: 'Commoner',
-            bonus: 0
-        };
+        this.race = new Race('Human', 'A boring old human being', () => { }, () => { });
+        this.class = new Class('Commoner', 'A simple, lowly peasant', () => { }, () => { });
         this.isActive = false;
         this.equipment = {
-            head: {
-                name: 'None',
-                bonus: 0
-            },
-            torso: {
-                name: 'None',
-                bonus: 0
-            },
-            leftHand: {
-                name: 'None',
-                bonus: 0
-            },
-            rightHand: {
-                name: 'None',
-                bonus: 1
-            },
-            legs: {
-                name: 'None',
-                bonus: 0
-            },
-            feet: {
-                name: 'None',
-                bonus: 0
-            },
+            head: new Equipment('Bare', 'No bonuses', 'head', () => { }, () => { }),
+            torso: new Equipment('Rags', 'No bonuses', 'head', () => { }, () => { }),
+            leftHand: new Equipment('Bare', 'No bonuses', 'head', () => { }, () => { }),
+            rightHand: new Equipment('Bare', 'No bonuses', 'head', () => { }, () => { }),
+            legs: new Equipment('Rags', 'No bonuses', 'head', () => { }, () => { }),
+            feet: new Equipment('Bare', 'No bonuses', 'head', () => { }, () => { }),
             get bonus() {
                 return 0;
             }
@@ -57,23 +34,9 @@ class Player {
 
     draw(deck) {
         this.hand.push(...deck.cards.slice(0, 1));
-        //                           ^^^^^^^^^^^ Change this to shift() after tests
-        // this.hand.push(deck.cards.shift());
+        //                           ^^^^^^^^^^^ Change this to next line after tests
+        // this.hand.push(deck.draw());
     }
-
-    // static drawTreasure(treasures) {
-    //     this.drawTreasure = function() {
-    //         this.draw(treasures);
-    //         log(this.hand.length);
-    //     }
-    // }
-
-    // static lootRoom(doors) {
-    //     this.lootRoom = function() {
-    //         this.draw(doors);
-    //         log(this.hand.length);
-    //     }
-    // }
 
     gift(cardIdx, recipient) {
         const card = this.hand[cardIdx];
