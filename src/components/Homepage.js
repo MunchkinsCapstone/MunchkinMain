@@ -35,7 +35,7 @@ class HomePage extends Component {
     fire.auth().onAuthStateChanged(user => {
       this.setState({ isSignedin: !!user });
       //deleted userName props in setState
-      console.log('user', user.displayName);
+      console.log('user', user);
     });
   };
   render() {
