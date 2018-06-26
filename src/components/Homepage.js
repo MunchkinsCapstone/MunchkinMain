@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import firebase from 'firebase';
 import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
-import Lobby from './Lobby';
 
 const FIREBASE_API_KEY = process.env.REACT_APP_FIREBASE_API_KEY;
 
@@ -14,8 +13,8 @@ class HomePage extends Component {
   constructor() {
     super();
     this.state = {
-      isSignedin: false,
-      userName: ''
+      isSignedin: false
+      // userName: ''
     };
     this.uiConfig = {
       signInFlow: 'popup',
@@ -28,16 +27,22 @@ class HomePage extends Component {
 
   componentDidMount = () => {
     firebase.auth().onAuthStateChanged(user => {
-      this.setState({ isSignedin: !!user, userName: user.displayName });
+      this.setState({ isSignedin: !!user });
+      //deleted userName props in setState
+      console.log('user', user.displayName);
     });
   };
   render() {
-    console.log(this.state.userName);
     return (
       <div className="App">
         <h1>MUNCHKIN</h1>
         {this.state.isSignedin ? (
-          <Lobby user={this.state.userName} />
+          <span>
+            <div>You are logged in!</div>
+            <h1>WELCOME {firebase.auth().currentUser.displayName}</h1>
+            {/* <h1>Welcome: {this.state.userName}</h1> */}
+            <button onClick={() => firebase.auth().signOut()}>Sign out!</button>
+          </span>
         ) : (
           <StyledFirebaseAuth
             uiConfig={this.uiConfig}
