@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
+import Login from './Login';
 
 import firebase from 'firebase';
 import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
 
 const FIREBASE_API_KEY = process.env.REACT_APP_FIREBASE_API_KEY;
-console.log('key', FIREBASE_API_KEY);
+// console.log('key', FIREBASE_API_KEY);
 
 firebase.initializeApp({
 	apiKey: FIREBASE_API_KEY,
@@ -38,6 +39,7 @@ class HomePage extends Component {
 		return (
 			<div className='App'>
 				<h1>MUNCHKIN</h1>
+				<Login />
 				{this.state.isSignedin ? (
 					<span>
 						<div>You are logged in!</div>

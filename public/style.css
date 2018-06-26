@@ -1,0 +1,19 @@
+.player-card-top {
+	display: flex;
+	justify-content: space-between;
+}
+
+.player-card-button {
+	display: flex;
+	justify-content: space-between;
+}
+
+.modal {
+	color: black;
+}
+
+.container {
+	display: flex;
+	justify-content: space-evenly;
+	flex-wrap: wrap;
+}

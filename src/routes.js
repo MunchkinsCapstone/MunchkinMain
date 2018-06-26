@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Route, Switch } from 'react-router-dom'; // withRouter
-import { Lobby, HomePage } from './components';
+import { Lobby, HomePage, GameBoard } from './components';
 
 class Routes extends Component {
 	render() {
@@ -8,6 +8,7 @@ class Routes extends Component {
 		return (
 			<Switch>
 				<Route exact path='/lobby' component={Lobby} />
+				<Route exact path='/game' component={GameBoard} />
 				<Route component={HomePage} />
 			</Switch>
 		);
