@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PlayerCard from './PlayerCard';
+import ButtonPanel from './ButtonPanel';
 let { doors, treasures, Battle, log, Game, turnOrder } = require('../../index');
 
 class GameBoard extends Component {
@@ -10,14 +11,17 @@ class GameBoard extends Component {
 				players: [],
 				currentPlayer: {},
 				playerOrder: [],
-				active: false
+				isActive: false
 			},
-			// doors: {},
-			// treasures: {},
 			players: ['Graham', 'Yang', 'Raymond', 'Ozal']
 		};
 		this.startGame = this.startGame.bind(this);
 		this.endTurn = this.endTurn.bind(this);
+		this.knockKnock = this.knockKnock.bind(this);
+		this.fight = this.fight.bind(this);
+		this.flee = this.flee.bind(this);
+		this.lootRoom = this.lootRoom.bind(this);
+		this.discard = this.discard.bind(this);
 	}
 
 	startGame() {
@@ -28,12 +32,52 @@ class GameBoard extends Component {
 		});
 	}
 
+	knockKnock() {
+		const { game } = this.state;
+		game.knockKnock();
+		this.setState({
+			game
+		});
+	}
+
+	fight() {
+		const { game } = this.state;
+		game.battle.resolve();
+		this.setState({
+			game
+		});
+	}
+
+	flee() {
+		const { game } = this.state;
+		game.battle.flee();
+		this.setState({
+			game
+		});
+	}
+
+	lootRoom() {
+		const { game } = this.state;
+		game.lootRoom();
+		this.setState({
+			game
+		});
+	}
+
 	endTurn() {
 		const { game } = this.state;
 		game.endTurn();
 		this.setState({
 			game
-		})
+		});
+	}
+
+	discard() {
+		const { game } = this.state;
+		game.currentPlayer.hand.pop().discard();
+		this.setState({
+			game
+		});
 	}
 
 	render() {
@@ -63,36 +107,16 @@ class GameBoard extends Component {
 					<div className='col-3'>
 						<div className='row'>
 							<div className='col-12'>
-								<div className='flexContainer'>
-									<button type='button' className='btn btn-primary' onClick={game.knockKnock}>
-										Kick Door
-									</button>
-									<button
-										type='button'
-										className='btn btn-danger'
-										onClick={() => {
-											const discarded = game.currentPlayer.hand.pop();
-											console.log(`Discarded: ${discarded}`);
-										}}
-									>
-										Discard Hand
-									</button>
-									<button type='button' className='btn btn-success' onClick={game.drawTreasure}>
-										Draw Treasure
-									</button>
-									<button type='button' className='btn btn-warning' onClick={logHand}>
-										Run
-									</button>
-									<button type='button' className='btn btn-secondary' onClick={game.lootRoom}>
-										Loot Room
-									</button>
-									<button type='button' className='btn btn-info' onClick={this.endTurn}>
-										End Turn
-									</button>
-									<button type='button' className='btn btn-dark' onClick={this.startGame}>
-										Start Game
-									</button>
-								</div>
+								<ButtonPanel
+								game={game}
+								startGame={this.startGame}
+								knockKnock={this.knockKnock}
+								fight={this.fight}
+								flee={this.flee}
+								lootRoom={this.lootRoom}
+								discard={this.discard}
+								endTurn={this.endTurn}
+								/>
 							</div>
 						</div>
 					</div>

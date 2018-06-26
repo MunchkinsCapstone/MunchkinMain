@@ -2,14 +2,11 @@ class Card {
     constructor(name, description) {
         this.name = name;
         this.description = description;
-    }
-
-    play() {
-
+        this.discard = this.discard.bind(this);
     }
 
     discard() {
-
+        decks[this.deck].graveYard.push(this);
     }
 }
 
@@ -20,6 +17,7 @@ class Monster extends Card {
         this.treasures = treasures;
         this.type = 'Monster';
         this.badStuff = badStuff;
+        this.deck = 'doors';
     }
 
     die() {
@@ -39,6 +37,7 @@ class Modifier extends Buff {
     constructor(name, description, effect, remove) {
         super(name, description, effect, remove);
         this.type = 'Modifier';
+        this.deck = 'doors';
     }
 }
 
@@ -47,6 +46,7 @@ class Equipment extends Buff {
         super(name, description, effect, remove);
         this.bodyPart = bodyPart;
         this.type = 'Equipment';
+        this.deck = 'treasures';
     }
 }
 
@@ -54,6 +54,7 @@ class Spell extends Buff {
     constructor(name, description, effect, remove) {
         super(name, description, effect, remove);
         this.type = 'Spell';
+        this.deck = 'treasures';
     }
 }
 
@@ -61,6 +62,7 @@ class Class extends Buff {
     constructor(name, description, effect, remove) {
         super(name, description, effect, remove);
         this.type = 'Class';
+        this.deck = 'doors';
     }
 }
 
@@ -68,6 +70,7 @@ class Race extends Buff {
     constructor(name, description, effect, remove) {
         super(name, description, effect, remove);
         this.type = 'Race';
+        this.deck = 'doors';
     }
 }
 
@@ -86,6 +89,16 @@ function shuffle(array) {
 class Deck {
     constructor(cards) {
         this.cards = cards;
+        this.graveYard = [];
+        this.draw = this.draw.bind(this);
+        this.flip = this.flip.bind(this);
+        this.shuffleCards = this.shuffleCards.bind(this);
+        this.restock = this.restock.bind(this);
+    }
+
+    draw() {
+        if (!this.cards.length) this.restock();
+        return this.cards.shift();
     }
 
     flip() {
@@ -95,6 +108,10 @@ class Deck {
     shuffleCards() {
         this.cards = shuffle(this.cards);
     }
+
+    restock() {
+        this.cards = this.cards.concat(shuffle(this.graveYard));
+    }
 }
 
 //-----------------------------------------------------------------------//
@@ -102,10 +119,10 @@ class Deck {
 //-----------------------------------------------------------------------//
 
 const monsters = [
-    new Monster('Slime', 'A big glob o\' goop', 2, 1, () => {}),
-    new Monster('Skeleton', 'A buncha dancin\', rattlin\' bones', 3, 1, () => {}),
+    new Monster('Slime', 'A big glob o\' goop', 2, 1, (player) => {}),
+    new Monster('Skeleton', 'A buncha dancin\', rattlin\' bones', 3, 1, (player) => {}),
     new Monster('Dragon', 'A gigantic fire-breathing lizard', 20, 5, (player) => {player.die()}),
-    new Monster('Vampire', 'Fanged fiend', 14, 4, () => {}),
+    new Monster('Vampire', 'Fanged fiend', 14, 4, (player) => {}),
 ];
 
 const modifiers = [
@@ -155,11 +172,18 @@ const spells = [
     new Spell('Magic Missile')
 ];
 
-const doors = monsters.concat(modifiers).concat(races).concat(classes);
-const treasures = equipments.concat(spells);
+const doors = new Deck(monsters.concat(modifiers).concat(races).concat(classes));
+const treasures = new Deck(equipments.concat(spells));
+
+const decks = {
+    doors, treasures
+}
 
 module.exports = {
     Deck,
+    Race,
+    Class,
+    Equipment,
     monsters,
     equipments,
     classes,
